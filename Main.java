@@ -1,109 +1,104 @@
+//В данном коде:
+//
+//Создан класс Robot, который моделирует робота-пылесоса с базовыми функциями, такими как "начать уборку" и "остановить уборку". Робот также имеет механизм отслеживания своих действий через AccessRepo.
+//
+//AccessRepo регистрирует команды, выполняемые роботом, поэтому его можно использовать для отслеживания того, какие действия были выполнены.
+//
+//Затем создается класс Command, который содержит методы для тестирования функций робота. Command также выводит историю команд после каждого теста, чтобы можно было увидеть, какие команды были отмечены как выполненные.
+//
+//Код осуществляет моделирование робота-пылесоса и проверку основных функций, и соответствует задаче проведения UAT тестирования.
+
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class Main {
 
-    public static void main(String[] args) {
-        AccessRepoTest.runAllTests();
-    }
+    public static class Robot {
+        private int battery;
+        private boolean cleaning;
+        private AccessRepo accessRepo;
 
-    public static class User {
-        private String name;
-
-        public User(String name) {
-            this.name = name;
+        public Robot() {
+            this.battery = 100;
+            this.cleaning = false;
+            this.accessRepo = new AccessRepo(this);
         }
 
-        public String getName() {
-            return name;
+        public boolean isCleaning() {
+            return cleaning;
         }
 
-        @Override
-        public boolean equals(Object obj) {
-            if(obj == this) {
-                return true;
+        public void startCleaning() {
+            if (battery > 20) {
+                battery -= 20;
+                cleaning = true;
+                this.accessRepo.addCommand("Запуск уборки");
+            } else {
+                System.out.println("Недостаточный уровень заряда для начала уборки!");
             }
-            if(!(obj instanceof User)) {
-                return false;
-            }
-            User other = (User) obj;
-            return (name != null && name.equals(other.name));
-        }
-    }
-
-    public static class Group {
-        private String name;
-
-        public Group(String name) {
-            this.name = name;
         }
 
-        public String getName() {
-            return name;
+        public void stopCleaning() {
+            cleaning = false;
+            this.accessRepo.addCommand("Остановка уборки");
         }
 
-        @Override
-        public boolean equals(Object obj) {
-            if(obj == this) {
-                return true;
-            }
-            if(!(obj instanceof Group)) {
-                return false;
-            }
-            Group other = (Group) obj;
-            return (name != null && name.equals(other.name));
+        public AccessRepo getAccessRepo() {
+            return accessRepo;
         }
     }
 
     public static class AccessRepo {
-        private User user;
-        private Group group;
+        private Robot robot;
+        private List<String> commandHistory;
 
-        public AccessRepo(User user, Group group) {
-            this.user = user;
-            this.group = group;
+        public AccessRepo(Robot robot) {
+            this.robot = robot;
+            this.commandHistory = new ArrayList<>();
         }
 
-        public User findUser() {
-            return user;
+        public void addCommand(String command) {
+            commandHistory.add(command);
         }
 
-        public Group getGroup() {
-            return group;
-        }
-
-        public void setUser(User user) {
-            this.user = user;
-        }
-
-        public void setGroup(Group group) {
-            this.group = group;
+        public List<String> getCommandHistory() {
+            return commandHistory;
         }
     }
 
-    public static class AccessRepoTest {
-        public static void runAllTests() {
-            testChangeUser();
-            testChangeGroup();
+    public static class Command {
+        public void runUATTests() {
+            testStartCleaning();
+            testStopCleaning();
         }
 
-        public static void testChangeUser() {
-            AccessRepo accessRepo = new AccessRepo(new User("Name1"), new Group("Group1"));
-            User user2 = new User("Name2");
-            accessRepo.setUser(user2);
-            if(accessRepo.findUser().equals(user2)) {
-                System.out.println("Тест замены пользователя пройден!");
+        public void testStartCleaning() {
+            Robot robot = new Robot();
+            robot.startCleaning();
+            if (robot.isCleaning()) {
+                System.out.println("Тест 'запуска уборки' пройден!");
             } else {
-                System.out.println("Тест замены пользователя провален!");
+                System.out.println("Тест 'запуска уборки' провален!");
             }
+            System.out.println("История команд: " + robot.getAccessRepo().getCommandHistory());
         }
 
-        public static void testChangeGroup() {
-            AccessRepo accessRepo = new AccessRepo(new User("Name1"), new Group("Архитектура ПО"));
-            Group newGroup = new Group("Software Arch");
-            accessRepo.setGroup(newGroup);
-            if(accessRepo.getGroup().equals(newGroup)) {
-                System.out.println("Тест замены группы пройден!");
+        public void testStopCleaning() {
+            Robot robot = new Robot();
+            robot.startCleaning(); // Robot needs to start cleaning before it can stop
+            robot.stopCleaning();
+            if (!robot.isCleaning()) {
+                System.out.println("Тест 'остановки уборки' пройден!");
             } else {
-                System.out.println("Тест замены группы провален!");
+                System.out.println("Тест 'остановки уборки' провален!");
             }
+            System.out.println("История команд: " + robot.getAccessRepo().getCommandHistory());
         }
+    }
+
+    public static void main(String[] args) {
+        Command command = new Command();
+        command.runUATTests();
     }
 }
